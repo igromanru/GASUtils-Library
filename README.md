@@ -1,1 +1,1 @@
-#  Google Apps Script Utils
+#  Google Apps Script Utils Library
