@@ -10,27 +10,6 @@
  * @constructor
  */
 class SheetDatabase {
-    /**
-     * @type {Spreadsheet}
-     * @private
-     */
-    #spreadsheet = null;
-    /**
-     * @type {Sheet}
-     * @private
-     */
-    #sheet = null;
-    /**
-     * @type {string[]}
-     * @private
-     */
-    #properties = [];
-    /**
-     * @type {Object<string, int>}
-     * @private
-     */
-    #primaryKeyProperties = {};
-
     /** 
      * @param {string} spreadsheetId
      * @param {string} sheetName
@@ -50,31 +29,48 @@ class SheetDatabase {
         if (typeof(primaryKeyProperties) != "string" && !Array.isArray(primaryKeyProperties)) {
             throw new Error("primaryKeyColumns parameter has to be a string or a string array!");
         }
-        this.#spreadsheet = SpreadsheetApp.openById(spreadsheetId);
-        if (!this.#spreadsheet) {
+        /**
+         * @type {Spreadsheet}
+         * @private
+         */
+        this.spreadsheet = SpreadsheetApp.openById(spreadsheetId);
+        if (!this.spreadsheet) {
             throw new Error(`Couldn't find Spreadsheet with id: ${spreadsheetId}`);
         }
-        this.#sheet = this.#spreadsheet.getSheetByName(sheetName);
-        if (!this.#sheet) {
+        /**
+         * @type {Sheet}
+         * @private
+         */
+        this.sheet = this.spreadsheet.getSheetByName(sheetName);
+        if (!this.sheet) {
             throw new Error(`Couldn't find Sheet with name: ${sheetName}`);
         }
-        this.#properties = properties;
+        /**
+         * @type {string[]}
+         * @private
+         */
+        this.properties = properties;
+        /**
+         * @type {Object<string, int>}
+         * @private
+         */
+        this.primaryKeyProperties = {}
         primaryKeyProperties = Array.isArray(primaryKeyProperties) ? primaryKeyProperties : [primaryKeyProperties]
         primaryKeyProperties.forEach((element) => {
             for (let i = 0; i < properties.length; i++) {
                 if (element === properties[i]) {
-                    this.#primaryKeyProperties[element] = i;
+                    this.primaryKeyProperties[element] = i;
                 }
             }
         });
     }
 
     /**
-     * Converts `Values` index to row number, which is 0 at row number 2, when using `#getDataRange`.
+     * Converts `Values` index to row number, which is 0 at row number 2, when using `getDataRange`.
      * @param {number} index 
      * @returns {number}
      */
-    #indexToRowNumber(index) {
+    indexToRowNumber(index) {
         return index + 2
     }
 
@@ -82,12 +78,12 @@ class SheetDatabase {
      * 
      * @returns {?Range}
      */
-    #getDataRange() {
-        if (!this.#sheet) return null;
+    getDataRange() {
+        if (!this.sheet) return null;
 
-        const lastRow = this.#sheet.getLastRow();
-        const lastColumn = this.#sheet.getLastColumn();
-        return this.#sheet.getRange(2, 1, lastRow, lastColumn);
+        const lastRow = this.sheet.getLastRow();
+        const lastColumn = this.sheet.getLastColumn();
+        return this.sheet.getRange(2, 1, lastRow, lastColumn);
     }
 
     /**
@@ -95,15 +91,15 @@ class SheetDatabase {
      * @see https://developers.google.com/apps-script/reference/spreadsheet/range#getlastrow
      * @returns {?{ row: number, range: Range }}
      */
-    #getLastEmptyRowRange() {
-        if (!this.#sheet) return null;
+    getLastEmptyRowRange() {
+        if (!this.sheet) return null;
 
-        const lastRow = this.#sheet.getLastRow();
-        const lastColumn = this.#sheet.getLastColumn();
+        const lastRow = this.sheet.getLastRow();
+        const lastColumn = this.sheet.getLastColumn();
 
         return {
             row: lastRow,
-            range: this.#sheet.getRange(lastRow, 1, 1, lastColumn)
+            range: this.sheet.getRange(lastRow, 1, 1, lastColumn)
         };
     }
 
@@ -112,8 +108,8 @@ class SheetDatabase {
      * @see https://developers.google.com/apps-script/reference/spreadsheet/range#getvalues
      * @returns {?{ row: number, values: Object[] }}
      */
-    #getLastEmptyRowValuesRef() {
-        const rowAndRange = this.#getLastEmptyRowRange();
+    getLastEmptyRowValuesRef() {
+        const rowAndRange = this.getLastEmptyRowRange();
         if (!rowAndRange) return null;
         
         let values = rowAndRange.range.getValues()
@@ -131,11 +127,26 @@ class SheetDatabase {
      * @param {Object[]} rowValues 
      * @returns {boolean} Success
      */
-    #mapObjectToRow(object, rowValues) {
+    mapObjectToRow(object, rowValues) {
         if (!object || !rowValues) return false;
 
-        for (let i = 0; i < this.#properties.length; i++) {
-            rowValues[i] = object[this.#properties[i]]
+        for (let i = 0; i < this.properties.length; i++) {
+            rowValues[i] = object[this.properties[i]]
+        }
+        return true;
+    }
+
+    /**
+     * 
+     * @param {Object[]} rowValues 
+     * @param {Object} object 
+     * @returns {boolean} Success
+     */
+    mapRowToObject(rowValues, object) {
+        if (!rowValues || !object) return false;
+
+        for (let i = 0; i < this.properties.length; i++) {
+            object[this.properties[i]] = rowValues[i]
         }
         return true;
     }
@@ -145,13 +156,13 @@ class SheetDatabase {
      * @param {Object} object 
      * @returns {?number}
      */
-    #findRowByPrimaryKeys(object) {
-        const dataRange = this.#getDataRange();
+    findRowByPrimaryKeys(object) {
+        const dataRange = this.getDataRange();
         if (!dataRange) return null;
 
         const values = dataRange.getValues();
         const index = values.findIndex(row => {
-            for (const [propertyName, columnIndex] of Object.entries(this.#primaryKeyProperties)) {
+            for (const [propertyName, columnIndex] of Object.entries(this.primaryKeyProperties)) {
                 if (row[columnIndex] !== object[propertyName]) {
                     return false;
                 }
@@ -160,7 +171,16 @@ class SheetDatabase {
         });
     
         // Return 1-based row number or null if not found
-        return index > -1 ? this.#indexToRowNumber(index) : null;
+        return index > -1 ? this.indexToRowNumber(index) : null;
+    }
+
+    /**
+     * 
+     * @param {Object} primaryKeysObject 
+     * @returns {Object}
+     */
+    getEntry(primaryKeysObject) {
+
     }
 
     /**
@@ -169,12 +189,12 @@ class SheetDatabase {
      * @returns {number} Row number of the new row or -1 if the object already exists
      */
     addEntry(object) {
-        if (this.#findRowByPrimaryKeys(object)) return -1;
+        if (this.findRowByPrimaryKeys(object)) return -1;
 
-        let rowAndValues = this.#getLastEmptyRowValuesRef();
+        let rowAndValues = this.getLastEmptyRowValuesRef();
         if (!rowAndValues) return -1;
 
-        if (this.#mapObjectToRow(object, rowAndValues.values)) {
+        if (this.mapObjectToRow(object, rowAndValues.values)) {
             return rowAndValues.row;
         }
         return -1;
@@ -186,9 +206,9 @@ class SheetDatabase {
      * @returns {boolean} Deleted successfully
      */
     deleteEntry(primaryKeysObject) {
-        const row = this.#findRowByPrimaryKeys(primaryKeysObject);
+        const row = this.findRowByPrimaryKeys(primaryKeysObject);
         if (!row || row < 2) return false;
 
-        this.#sheet.deleteRow(row)
+        this.sheet.deleteRow(row)
     }
 }
