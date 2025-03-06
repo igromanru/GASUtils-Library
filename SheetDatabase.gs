@@ -70,49 +70,57 @@ class SheetDatabase {
     }
 
     /**
+     * Converts `Values` index to row number, which is 0 at row number 2, when using `#getDataRange`.
+     * @param {number} index 
+     * @returns {number}
+     */
+    #indexToRowNumber(index) {
+        return index + 2
+    }
+
+    /**
      * 
      * @returns {?Range}
      */
     #getDataRange() {
         if (!this.#sheet) return null;
 
-        const lastRow = this.#sheet.getLastRow(); 
-        const numRows = lastRow - 1;
-
-        return this.#sheet.getRange(2, 1, numRows, this.#sheet.getLastColumn());
+        const lastRow = this.#sheet.getLastRow();
+        const lastColumn = this.#sheet.getLastColumn();
+        return this.#sheet.getRange(2, 1, lastRow, lastColumn);
     }
 
     /**
      * Return Range to last empty row in the Sheet
      * @see https://developers.google.com/apps-script/reference/spreadsheet/range#getlastrow
-     * @returns {?{ rowIndex: number, range: Range }}
+     * @returns {?{ row: number, range: Range }}
      */
     #getLastEmptyRowRange() {
         if (!this.#sheet) return null;
 
         const lastRow = this.#sheet.getLastRow();
-        const nextRow = lastRow + 1;
+        const lastColumn = this.#sheet.getLastColumn();
 
         return {
-            rowIndex: nextRow,
-            range: this.#sheet.getRange(nextRow, 1, 1, this.#sheet.getLastColumn())
+            row: lastRow,
+            range: this.#sheet.getRange(lastRow, 1, 1, lastColumn)
         };
     }
 
     /**
      * Return reference to last empty row (values array) in the Sheet
      * @see https://developers.google.com/apps-script/reference/spreadsheet/range#getvalues
-     * @returns {?{ rowIndex: number, values: Object[] }}
+     * @returns {?{ row: number, values: Object[] }}
      */
     #getLastEmptyRowValuesRef() {
-        const indexAndRange = this.#getLastEmptyRowRange();
-        if (!indexAndRange) return null;
+        const rowAndRange = this.#getLastEmptyRowRange();
+        if (!rowAndRange) return null;
         
-        let values = indexAndRange.range.getValues()
+        let values = rowAndRange.range.getValues()
         if (!Array.isArray(values) || values.length < 1) return null;
 
         return {
-            rowIndex: indexAndRange.rowIndex,
+            row: rowAndRange.row,
             values: values[0]
         };
     }
@@ -142,7 +150,7 @@ class SheetDatabase {
         if (!dataRange) return null;
 
         const values = dataRange.getValues();
-        const rowIndex = values.findIndex(row => {
+        const index = values.findIndex(row => {
             for (const [propertyName, columnIndex] of Object.entries(this.#primaryKeyProperties)) {
                 if (row[columnIndex] !== object[propertyName]) {
                     return false;
@@ -152,7 +160,7 @@ class SheetDatabase {
         });
     
         // Return 1-based row number or null if not found
-        return rowIndex >= 0 ? rowIndex + 1 : null;
+        return index > -1 ? this.#indexToRowNumber(index) : null;
     }
 
     /**
@@ -163,16 +171,24 @@ class SheetDatabase {
     addEntry(object) {
         if (this.#findRowByPrimaryKeys(object)) return -1;
 
-        let indexAndValues = this.#getLastEmptyRowValuesRef();
-        if (!indexAndValues) return -1;
+        let rowAndValues = this.#getLastEmptyRowValuesRef();
+        if (!rowAndValues) return -1;
 
-        if (this.#mapObjectToRow(object, indexAndValues.values)) {
-            return indexAndValues.rowIndex;
+        if (this.#mapObjectToRow(object, rowAndValues.values)) {
+            return rowAndValues.row;
         }
         return -1;
     }
 
-    deleteEntry(id) {
+    /**
+     * 
+     * @param {Object} primaryKeysObject Object that contains properties that were given as "primaryKeyProperties" in cstor
+     * @returns {boolean} Deleted successfully
+     */
+    deleteEntry(primaryKeysObject) {
+        const row = this.#findRowByPrimaryKeys(primaryKeysObject);
+        if (!row || row < 2) return false;
 
+        this.#sheet.deleteRow(row)
     }
 }
