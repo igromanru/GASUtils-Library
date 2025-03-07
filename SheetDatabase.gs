@@ -89,9 +89,11 @@ class SheetDatabase {
     _getDataRange() {
         if (!this._sheet) return null;
 
-        const lastRow = this._sheet.getLastRow();
+        const rowNums = this._sheet.getLastRow() - 1;
+        if (rowNums <= 0) return null;
+
         const lastColumn = this._sheet.getLastColumn();
-        return this._sheet.getRange(2, 1, lastRow, lastColumn);
+        return this._sheet.getRange(2, 1, rowNums, lastColumn);
     }
 
     /**
