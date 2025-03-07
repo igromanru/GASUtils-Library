@@ -6,6 +6,6 @@
         "moduleResolution": "classic",
         "noEmit": true
     },
-    "include": ["**/*.js"],
+    "include": ["**/*.gs"],
     "exclude": []
 }
