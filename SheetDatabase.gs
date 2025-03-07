@@ -210,6 +210,26 @@ class SheetDatabase {
 
     /**
      * 
+     * @returns {Object[]}
+     */
+    getAllEntry() {
+        let entries = new Array();
+        const range = this._getDataRange()
+        if (!range) return [];
+
+        const values = range.getValues();
+        for (let i = 0; i < values.length; i++) {
+            const rowValues = values[i];
+            const object = this._rowValuesToObject(rowValues);
+            if (object) {
+                entries.push(object)
+            }
+        }
+        return entries;
+    }
+
+    /**
+     * 
      * @param {Object} primaryKeysObject 
      * @returns {?Object}
      */
