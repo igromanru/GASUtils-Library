@@ -4,12 +4,12 @@
  */
 
 /**
- * Class to use Sheet as Database
+ * Class to use Sheet as View for a Database (read only access)
  * @class
  * @public
  * @constructor
  */
-class SheetDatabase {
+class SheetView {
     /** 
      * @param {string} spreadsheetId
      * @param {string} sheetName
@@ -75,25 +75,17 @@ class SheetDatabase {
     }
 
     /**
-     * @returns {number} Row number
-     */
-    _getNewRow() {
-        if (!this._sheet) return null;
-        return this._sheet.getLastRow() + 1;
-    }
-
-    /**
      * 
      * @returns {?Range}
      */
     _getDataRange() {
         if (!this._sheet) return null;
 
-        const rowNums = this._sheet.getLastRow() - 1;
-        if (rowNums <= 0) return null;
+        const rowCount = this._sheet.getLastRow() - 1;
+        if (rowCount <= 0) return null;
 
         const lastColumn = this._sheet.getLastColumn();
-        return this._sheet.getRange(2, 1, rowNums, lastColumn);
+        return this._sheet.getRange(2, 1, rowCount, lastColumn);
     }
 
     /**
@@ -105,31 +97,6 @@ class SheetDatabase {
         if (!this._sheet || typeof(row) !== "number" || row < 2) return null;
 
         return this._sheet.getRange(row, 1, 1, this._sheet.getLastColumn());
-    }
-
-    /**
-     * 
-     * @param {Object} object 
-     * @returns {?Object[]} rowValues
-     */
-    _objectToRowValues(object) {
-        if (!object) return null;
-
-        let rowValues = [];
-        for (let i = 0; i < this._properties.length; i++) {
-            const propertyName = this._properties[i];
-            const value = object[propertyName];
-            if (typeof(value) === "object") {
-                if (isDate(value)) {
-                    rowValues[i] = dateToSpreadsheetDate(value);
-                } else {
-                    rowValues[i] = JSON.stringify(value);
-                }
-            } else {
-                rowValues[i] = value;
-            }
-        }
-        return rowValues;
     }
 
     /**
@@ -216,6 +183,18 @@ class SheetDatabase {
     }
 
     /**
+     * @returns {?Object}
+     */
+    getLastEntry() {
+        if (!this._sheet) return null;
+
+        let row = this._sheet.getLastRow()
+        if (!row || row < 2) return null;
+
+        return this._rowToObject(row)
+    }
+
+    /**
      * 
      * @param {Object} primaryKeysObject 
      * @returns {?Object}
@@ -226,17 +205,48 @@ class SheetDatabase {
 
         return this._rowToObject(row)
     }
+}
+
+/**
+ * Class to use Sheet as Database
+ * @class
+ * @public
+ * @constructor
+ */
+class SheetDatabase extends SheetView {
+    /** 
+     * @param {string} spreadsheetId
+     * @param {string} sheetName
+     * @param {string[]} properties
+     * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
+     */
+    constructor(spreadsheetId, sheetName, properties, primaryKeyProperties) {
+        super(spreadsheetId, sheetName, properties, primaryKeyProperties);
+    }
 
     /**
-     * @returns {?Object}
+     * 
+     * @param {Object} object 
+     * @returns {?Object[]} rowValues
      */
-    getLastEntry() {
-        if (!this._sheet) return null;
+    _objectToRowValues(object) {
+        if (!object) return null;
 
-        let row = this._sheet.getLastRow()
-        if (!row || row < 2) return null;
-
-        return this._rowToObject(row)
+        let rowValues = [];
+        for (let i = 0; i < this._properties.length; i++) {
+            const propertyName = this._properties[i];
+            const value = object[propertyName];
+            if (typeof(value) === "object") {
+                if (isDate(value)) {
+                    rowValues[i] = dateToSpreadsheetDate(value);
+                } else {
+                    rowValues[i] = JSON.stringify(value);
+                }
+            } else {
+                rowValues[i] = value;
+            }
+        }
+        return rowValues;
     }
 
     /**
@@ -296,6 +306,17 @@ class SheetDatabase {
  * @param {string[]} properties
  * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
  */
+function newSheetView(spreadsheetId, sheetName, properties, primaryKeyProperties) {
+    return new SheetView(spreadsheetId, sheetName, properties, primaryKeyProperties);
+}
+
+
+/** 
+ * @param {string} spreadsheetId
+ * @param {string} sheetName
+ * @param {string[]} properties
+ * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
+ */
 function newSheetDatabase(spreadsheetId, sheetName, properties, primaryKeyProperties) {
     return new SheetDatabase(spreadsheetId, sheetName, properties, primaryKeyProperties);
 }
@@ -329,7 +350,7 @@ function test_addEntry_deleteEntry() {
     };
     const database = newSheetDatabase(this[TradeSignalSpreadsheetId], this[TradeSignalDatabaseSheet], ["Id", "Pair", "Entry", "Short", "StopLoss", "TakeProfits", "Author", "CreatedAt"], "Id");
     console.log(`addEntry: ${database.addEntry(tradeSignal)}`);
-    
+    Utilities.sleep(1000)
     console.log(`deleteEntry: ${database.deleteEntry(tradeSignal)}`);
 }
 
