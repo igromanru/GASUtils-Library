@@ -108,21 +108,6 @@ class SheetDatabase {
     }
 
     /**
-     * Return Range to last empty row in the Sheet
-     * @see https://developers.google.com/apps-script/reference/spreadsheet/range#getlastrow
-     * @returns {?{ row: number, range: Range }}
-     */
-    _getNewRowRange() {
-        if (!this._sheet) return null;
-
-        const newRow = this._getNewRow();
-        return {
-            row: newRow,
-            range: this._getRowRange(newRow)
-        };
-    }
-
-    /**
      * 
      * @param {Object} object 
      * @returns {?Object[]} rowValues
@@ -263,14 +248,14 @@ class SheetDatabase {
         const foundRow = this.findRowByPrimaryKeys(object);
         if (typeof(foundRow) === "number" && foundRow > 1) return -1;
 
-        const rowAndRange = this._getNewRowRange();
-        if (!rowAndRange || rowAndRange.row < 2) return null;
-
         const newValues = this._objectToRowValues(object)
         if (!Array.isArray(newValues)) return -1;
 
-        rowAndRange.range.setValues([newValues]);
-        return rowAndRange.row;
+        if (this._sheet.appendRow(newValues))
+        {
+            return this._sheet.getLastRow();
+        }
+        return -1;
     }
 
     /**
