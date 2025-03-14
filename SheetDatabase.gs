@@ -271,20 +271,40 @@ class SheetDatabase extends SheetView {
     /**
      * 
      * @param {Object} object 
-     * @returns {boolean} Success
+     * @returns {number} Row number of the updated row or -1 if the update failed
      */
     updateEntry(object) {
         const foundRow = this.findRowByPrimaryKeys(object);
-        if (typeof(foundRow) !== "number" || foundRow < 2) return false;
+        if (typeof(foundRow) !== "number" || foundRow < 2) return -1;
 
         const range = this._getRowRange(foundRow);
-        if (!range) return false;
+        if (!range) return -1;
 
         const rowValues = this._objectToRowValues(object);
-        if (!Array.isArray(rowValues)) return false;
+        if (!Array.isArray(rowValues)) return -1;
 
         range.setValues([rowValues]);
-        return true;
+        return foundRow;
+    }
+
+    /**
+     * 
+     * @param {Object} object 
+     * @returns {number} Row number of added or updated row or -1 if the operation failed
+     */
+    addOrUpdateEntry(object) {
+        const rowValues = this._objectToRowValues(object);
+        if (!Array.isArray(rowValues)) return -1;
+
+        const foundRow = this.findRowByPrimaryKeys(object);
+        const range = this._getRowRange(foundRow);
+        if (range) {
+            range.setValues([rowValues]);
+            return foundRow;
+        } else if (this._sheet.appendRow(newValues)) {
+            return this._sheet.getLastRow();
+        }
+        return -1;
     }
 
     /**
