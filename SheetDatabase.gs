@@ -300,8 +300,8 @@ class SheetDatabase extends SheetView {
         const range = this._getRowRange(foundRow);
         if (range) {
             range.setValues([rowValues]);
-            return foundRow;
-        } else if (this._sheet.appendRow(newValues)) {
+            return range.getRowIndex();
+        } else if (this._sheet.appendRow(rowValues)) {
             return this._sheet.getLastRow();
         }
         return -1;
@@ -386,4 +386,25 @@ function test_getLastEntry_updateEntry() {
     entry.TakeProfits = [1950, 1900];
     entry.Author = "igromanru";
     console.log("Update:", database.updateEntry(entry));
+}
+
+function test_addOrUpdateEntry_deleteEntry() {
+    const tradeSignal = {
+        Id: Utilities.getUuid(),
+        Pair: "XAUUSD",
+        Entry: 2990,
+        Short: false,
+        StopLoss: 2880,
+        TakeProfits: [2995, 3000],
+        Author: "1661508107",
+        CreatedAt: new Date()
+    };
+    const database = newSheetDatabase(this[TradeSignalSpreadsheetId], this[TradeSignalDatabaseSheet], ["Id", "Pair", "Entry", "Short", "StopLoss", "TakeProfits", "Author", "CreatedAt"], "Id");
+    console.log(`addOrUpdateEntry 1: ${database.addOrUpdateEntry(tradeSignal)}`);
+    Utilities.sleep(1000)
+    tradeSignal.Pair = "EURUSD";
+    tradeSignal.Entry = 1337;
+    console.log(`addOrUpdateEntry 2: ${database.addOrUpdateEntry(tradeSignal)}`);
+    Utilities.sleep(2000)
+    console.log(`deleteEntry: ${database.deleteEntry(tradeSignal)}`);
 }
