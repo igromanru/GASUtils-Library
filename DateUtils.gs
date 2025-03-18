@@ -14,6 +14,18 @@ function isDate(dateTime) {
 }
 
 /**
+ * Converts JS Date to Unix timestamp
+ * @param {Date} dateTime 
+ * @returns {number} Seconds since January 1, 1970 or 0, if the date is invalid
+ */
+function dateToUnixTimestamp(dateTime) {
+    if (isDate(dateTime)) {
+        return Math.floor(dateTime.getTime() / 1000);
+    }
+    return 0;
+}
+
+/**
  * @param {Date} dateTime 
  * @returns {Date|undefined}
  */
