@@ -17,16 +17,16 @@ class SheetView {
      * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
      */
     constructor(spreadsheetId, sheetName, properties, primaryKeyProperties) {
-        if (typeof(spreadsheetId) != "string") {
+        if (typeof (spreadsheetId) != "string") {
             throw new Error("spreadsheetId parameter has to be a string!");
         }
-        if (typeof(sheetName) != "string") {
+        if (typeof (sheetName) != "string") {
             throw new Error("sheetName parameter has to be a string!");
         }
         if (!Array.isArray(properties)) {
             throw new Error("columns parameter has to be a string array!");
         }
-        if (typeof(primaryKeyProperties) != "string" && !Array.isArray(primaryKeyProperties)) {
+        if (typeof (primaryKeyProperties) != "string" && !Array.isArray(primaryKeyProperties)) {
             throw new Error("primaryKeyColumns parameter has to be a string or a string array!");
         }
         /**
@@ -94,7 +94,7 @@ class SheetView {
      * @returns {?Range}
      */
     _getRowRange(row) {
-        if (!this._sheet || typeof(row) !== "number" || row < 2) return null;
+        if (!this._sheet || typeof (row) !== "number" || row < 2) return null;
 
         return this._sheet.getRange(row, 1, 1, this._sheet.getLastColumn());
     }
@@ -111,10 +111,15 @@ class SheetView {
         for (let i = 0; i < this._properties.length; i++) {
             const propertyName = this._properties[i];
             const value = rowValues[i];
-            try {
-                object[propertyName] = JSON.parse(value);
-            } catch (error) {
-                object[propertyName] = value;
+            const safeNumber = toNumberOrBigIntString(value);
+            if (safeNumber) {
+                object[propertyName] = safeNumber;
+            } else {
+                try {
+                    object[propertyName] = JSON.parse(value);
+                } catch (error) {
+                    object[propertyName] = value;
+                }
             }
         }
         return object;
@@ -157,7 +162,7 @@ class SheetView {
             }
             return true;
         });
-    
+
         // Return 1-based row number or null if not found
         return index > -1 ? this._indexToRowNumber(index) : null;
     }
@@ -236,7 +241,7 @@ class SheetDatabase extends SheetView {
         for (let i = 0; i < this._properties.length; i++) {
             const propertyName = this._properties[i];
             const value = object[propertyName];
-            if (typeof(value) === "object") {
+            if (typeof (value) === "object") {
                 if (isDate(value)) {
                     rowValues[i] = dateToSpreadsheetDate(value);
                 } else {
@@ -256,13 +261,12 @@ class SheetDatabase extends SheetView {
      */
     addEntry(object) {
         const foundRow = this.findRowByPrimaryKeys(object);
-        if (typeof(foundRow) === "number" && foundRow > 1) return -1;
+        if (typeof (foundRow) === "number" && foundRow > 1) return -1;
 
         const newValues = this._objectToRowValues(object)
         if (!Array.isArray(newValues)) return -1;
 
-        if (this._sheet.appendRow(newValues))
-        {
+        if (this._sheet.appendRow(newValues)) {
             return this._sheet.getLastRow();
         }
         return -1;
@@ -275,7 +279,7 @@ class SheetDatabase extends SheetView {
      */
     updateEntry(object) {
         const foundRow = this.findRowByPrimaryKeys(object);
-        if (typeof(foundRow) !== "number" || foundRow < 2) return -1;
+        if (typeof (foundRow) !== "number" || foundRow < 2) return -1;
 
         const range = this._getRowRange(foundRow);
         if (!range) return -1;
@@ -343,18 +347,18 @@ function newSheetDatabase(spreadsheetId, sheetName, properties, primaryKeyProper
 
 const TradeSignalSpreadsheetId = Symbol('TradeSignalSpreadsheetId');
 Object.defineProperty(this, TradeSignalSpreadsheetId, {
-  value: "1S7S9d3JoNMb00KBVxLw9nUxGBCd8_P166jHKEjBLw6M",
-  writable: false, // read-only
-  enumerable: false, // Hide from library users
-  configurable: false // Prevent further changes to this property
+    value: "1S7S9d3JoNMb00KBVxLw9nUxGBCd8_P166jHKEjBLw6M",
+    writable: false, // read-only
+    enumerable: false, // Hide from library users
+    configurable: false // Prevent further changes to this property
 });
 
 const TradeSignalDatabaseSheet = Symbol('TradeSignalDatabaseSheet');
 Object.defineProperty(this, TradeSignalDatabaseSheet, {
-  value: "Database",
-  writable: false, // read-only
-  enumerable: false, // Hide from library users
-  configurable: false // Prevent further changes to this property
+    value: "Database",
+    writable: false, // read-only
+    enumerable: false, // Hide from library users
+    configurable: false // Prevent further changes to this property
 });
 
 function test_addEntry_deleteEntry() {
