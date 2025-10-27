@@ -30,7 +30,7 @@ function toBigInt(value) {
     try {
         return BigInt(value);
     } catch (e) {
-        console.log(e)
+      // Nothing to do here
     }
     return undefined;
 }
