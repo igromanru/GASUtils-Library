@@ -110,17 +110,17 @@ class SheetView {
         let object = {}
         for (let i = 0; i < this._properties.length; i++) {
             const propertyName = this._properties[i];
-            const value = rowValues[i];
-            const safeNumber = toNumberOrBigIntString(value);
-            if (safeNumber) {
-                object[propertyName] = safeNumber;
-            } else {
-                try {
-                    object[propertyName] = JSON.parse(value);
-                } catch (error) {
-                    object[propertyName] = value;
+            let value = rowValues[i];
+            try {
+                value = JSON.parse(value);
+                const safeNumber = toNumberOrBigIntString(value);
+                if (safeNumber) {
+                    value = safeNumber;
                 }
+            } catch (error) {
+                // Do nothing
             }
+            object[propertyName] = value;
         }
         return object;
     }
@@ -330,7 +330,7 @@ class SheetDatabase extends SheetView {
      */
     addOrUpdateEntry(object) {
         this._autoSetCreatedAtAndModifiedAt(object);
-        
+
         const rowValues = this._objectToRowValues(object);
         if (!Array.isArray(rowValues)) return -1;
 
