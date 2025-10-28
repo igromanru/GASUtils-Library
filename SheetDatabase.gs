@@ -224,9 +224,23 @@ class SheetDatabase extends SheetView {
      * @param {string} sheetName
      * @param {string[]} properties
      * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
+     * @param {Date=?} createdAtProperty
+     * @param {Date=?} modifiedAtProperty
      */
-    constructor(spreadsheetId, sheetName, properties, primaryKeyProperties) {
+    constructor(spreadsheetId, sheetName, properties, primaryKeyProperties, createdAtProperty, modifiedAtProperty) {
         super(spreadsheetId, sheetName, properties, primaryKeyProperties);
+
+        /**
+         * @type {Date=?}
+         * @private
+         */
+        this._createdAtProperty = createdAtProperty;
+
+        /**
+         * @type {Date=?}
+         * @private
+         */
+        this._modifiedAtProperty = modifiedAtProperty;
     }
 
     /**
