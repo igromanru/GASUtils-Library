@@ -224,8 +224,8 @@ class SheetDatabase extends SheetView {
      * @param {string} sheetName
      * @param {string[]} properties
      * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
-     * @param {Date=?} createdAtProperty
-     * @param {Date=?} modifiedAtProperty
+     * @param {Date=?} createdAtProperty Column name for CreatedAt timestamp
+     * @param {Date=?} modifiedAtProperty Column name for ModifiedAt timestamp
      */
     constructor(spreadsheetId, sheetName, properties, primaryKeyProperties, createdAtProperty, modifiedAtProperty) {
         super(spreadsheetId, sheetName, properties, primaryKeyProperties);
@@ -269,13 +269,29 @@ class SheetDatabase extends SheetView {
     }
 
     /**
+     * @param {Object} object Object that may contain CreatedAt and/or ModifiedAt properties
+     */
+    _autoSetCreatedAtAndModifiedAt(object) {
+        if (!object) return;
+
+        if (this._createdAtProperty && !object[this._createdAtProperty]) {
+            object[this._createdAtProperty] = new Date();
+        }
+        if (this._modifiedAtProperty) {
+            object[this._modifiedAtProperty] = new Date();
+        }
+    }
+
+    /**
      * Add new entry at the end of the table
-     * @param object Object which properties match names in columns array which was passed to constructor
+     * @param {Object} object Object which properties match names in columns array which was passed to constructor
      * @returns {number} Row number of the new row or -1 if the object already exists
      */
     addEntry(object) {
         const foundRow = this.findRowByPrimaryKeys(object);
         if (typeof (foundRow) === "number" && foundRow > 1) return -1;
+
+        this._autoSetCreatedAtAndModifiedAt(object);
 
         const newValues = this._objectToRowValues(object)
         if (!Array.isArray(newValues)) return -1;
@@ -298,6 +314,8 @@ class SheetDatabase extends SheetView {
         const range = this._getRowRange(foundRow);
         if (!range) return -1;
 
+        this._autoSetCreatedAtAndModifiedAt(object);
+
         const rowValues = this._objectToRowValues(object);
         if (!Array.isArray(rowValues)) return -1;
 
@@ -311,6 +329,8 @@ class SheetDatabase extends SheetView {
      * @returns {number} Row number of added or updated row or -1 if the operation failed
      */
     addOrUpdateEntry(object) {
+        this._autoSetCreatedAtAndModifiedAt(object);
+        
         const rowValues = this._objectToRowValues(object);
         if (!Array.isArray(rowValues)) return -1;
 
@@ -354,9 +374,11 @@ function newSheetView(spreadsheetId, sheetName, properties, primaryKeyProperties
  * @param {string} sheetName
  * @param {string[]} properties
  * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
+ * @param {Date=?} createdAtProperty Column name for CreatedAt timestamp
+ * @param {Date=?} modifiedAtProperty Column name for ModifiedAt timestamp
  */
-function newSheetDatabase(spreadsheetId, sheetName, properties, primaryKeyProperties) {
-    return new SheetDatabase(spreadsheetId, sheetName, properties, primaryKeyProperties);
+function newSheetDatabase(spreadsheetId, sheetName, properties, primaryKeyProperties, createdAtProperty, modifiedAtProperty) {
+    return new SheetDatabase(spreadsheetId, sheetName, properties, primaryKeyProperties, createdAtProperty, modifiedAtProperty);
 }
 
 const TradeSignalSpreadsheetId = Symbol('TradeSignalSpreadsheetId');
