@@ -269,17 +269,33 @@ class SheetDatabase extends SheetView {
     }
 
     /**
-     * @param {Object} object Object that may contain CreatedAt and/or ModifiedAt properties
+     * 
+     * @param {Object} object 
+     * @returns {boolean} Was set
      */
-    _autoSetCreatedAtAndModifiedAt(object) {
-        if (!object) return;
+    _autoSetCreatedAt(object) {
+        if (!object) return false;
 
         if (this._createdAtProperty && !object[this._createdAtProperty]) {
             object[this._createdAtProperty] = new Date();
+            return true;
         }
+        return false;
+    }
+
+    /**
+     * 
+     * @param {Object} object 
+     * @returns {boolean} Was set
+     */
+    _autoSetModifiedAt(object) {
+        if (!object) return false;
+
         if (this._modifiedAtProperty) {
             object[this._modifiedAtProperty] = new Date();
+            return true;
         }
+        return false;
     }
 
     /**
@@ -291,7 +307,8 @@ class SheetDatabase extends SheetView {
         const foundRow = this.findRowByPrimaryKeys(object);
         if (typeof (foundRow) === "number" && foundRow > 1) return -1;
 
-        this._autoSetCreatedAtAndModifiedAt(object);
+        this._autoSetCreatedAt(object);
+        this._autoSetModifiedAt(object);
 
         const newValues = this._objectToRowValues(object)
         if (!Array.isArray(newValues)) return -1;
@@ -314,7 +331,7 @@ class SheetDatabase extends SheetView {
         const range = this._getRowRange(foundRow);
         if (!range) return -1;
 
-        this._autoSetCreatedAtAndModifiedAt(object);
+        this._autoSetModifiedAt(object);
 
         const rowValues = this._objectToRowValues(object);
         if (!Array.isArray(rowValues)) return -1;
@@ -329,12 +346,17 @@ class SheetDatabase extends SheetView {
      * @returns {number} Row number of added or updated row or -1 if the operation failed
      */
     addOrUpdateEntry(object) {
-        this._autoSetCreatedAtAndModifiedAt(object);
+        const foundRow = this.findRowByPrimaryKeys(object);
+
+        if (foundRow && foundRow > 0) {
+            this._autoSetModifiedAt(object);
+        } else {
+            this._autoSetCreatedAt(object);
+        }
 
         const rowValues = this._objectToRowValues(object);
         if (!Array.isArray(rowValues)) return -1;
 
-        const foundRow = this.findRowByPrimaryKeys(object);
         const range = this._getRowRange(foundRow);
         if (range) {
             range.setValues([rowValues]);
