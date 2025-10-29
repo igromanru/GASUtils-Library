@@ -37,11 +37,11 @@ function toBigInt(value) {
 
 /**
  * Checks if a value can be safely represented as a number
- * @param {number} value 
+ * @param {number} number Any number 
  * @returns {boolean}
  */
-function isSafeNumber(value) {
-    if (typeof value !== 'number' || !Number.isFinite(number)) return false;
+function isSafeNumber(number) {
+    if (typeof number !== 'number' || !Number.isFinite(number)) return false;
 
     return number >= Number.MIN_SAFE_INTEGER && number <= Number.MAX_SAFE_INTEGER;
 }
