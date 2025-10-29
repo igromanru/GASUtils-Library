@@ -30,38 +30,36 @@ function toBigInt(value) {
     try {
         return BigInt(value);
     } catch (e) {
-      // Nothing to do here
+        // Nothing to do here
     }
     return undefined;
 }
 
 /**
  * Checks if a value can be safely represented as a number
- * @param {Object} value 
+ * @param {number} value 
  * @returns {boolean}
  */
-function isNumberSafe(value) {
-  const number = Number(value);
+function isSafeNumber(value) {
+    if (typeof value !== 'number' || !Number.isFinite(number)) return false;
 
-  if (!Number.isFinite(number)) return false;
-
-  return number >= Number.MIN_SAFE_INTEGER && number <= Number.MAX_SAFE_INTEGER;
+    return number >= Number.MIN_SAFE_INTEGER && number <= Number.MAX_SAFE_INTEGER;
 }
 
 /**
- *  Converts value to number, if it's too big, try to convert to BigInt and returns it as string
- * @param {Object} value Any object, but preferably string or number
- * @returns {number|string|undefined}
+ * Converts value to number, if it's too big, return it as string
+ * @param {Object} value An object that can be parsed as a number
+ * @returns {number|string|undefined} Returns undefined, if `value` is not a number, string or BigInt
  */
-function toNumberOrBigIntString(value) {
-  // if (typeof value == 'bigint') return value.toString();
-  let number = toNumber(value);
-  if (isNumberSafe(number)) return number;
+function toNumberOrString(value) {
+    let number = toNumber(value);
+    if (isSafeNumber(number)) return number;
 
-  let bigInt = toBigInt(value);
-  if (bigInt) return bigInt.toString();
+    if (typeof value === 'string' || typeof value === 'bigint') {
+        return value.toString();
+    }
 
-  return undefined;
+    return undefined;
 }
 
 function _testToNumber() {

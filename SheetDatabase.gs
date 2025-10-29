@@ -105,24 +105,47 @@ class SheetView {
      * @returns {?Object}
      */
     _rowValuesToObject(rowValues) {
-        if (!rowValues) return null;
+        if (!rowValues || !Array.isArray(rowValues)) return null;
 
-        let object = {}
-        for (let i = 0; i < this._properties.length; i++) {
-            const propertyName = this._properties[i];
-            let value = rowValues[i];
-            try {
-                value = JSON.parse(value);
-                const safeNumber = toNumberOrBigIntString(value);
-                if (safeNumber) {
-                    value = safeNumber;
-                }
-            } catch (error) {
-                // Do nothing
+        const obj = {}
+        const props = this._properties;
+
+        for (let i = 0; i < props.length; i++) {
+            const propName = props[i];
+            let cellValue = i < rowValues.length ? rowValues[i] : undefined;
+
+            if (cellValue === '' || cellValue === null || cellValue === undefined) {
+                obj[propName] = undefined;
+                continue;
             }
-            object[propertyName] = value;
+
+            // if (isDate(cellValue)) {
+            //     obj[propName] = cell;
+            //     continue;
+            // }
+
+            const numberOrString = toNumberOrString(cellValue);
+            if (numberOrString) {
+                obj[propName] = numberOrString;
+                continue;
+            }
+
+            let parsed = null;
+            try {
+                parsed = JSON.parse(cellValue);
+            } catch (_) {
+                // Nothing to do here
+            }
+
+            if (typeof parsed === 'object' && parsed !== null) {
+                obj[propName] = parsed;
+                continue;
+            }
+
+            obj[propName] = cellValue;
         }
-        return object;
+
+        return obj;
     }
 
     /**
@@ -389,7 +412,6 @@ class SheetDatabase extends SheetView {
 function newSheetView(spreadsheetId, sheetName, properties, primaryKeyProperties) {
     return new SheetView(spreadsheetId, sheetName, properties, primaryKeyProperties);
 }
-
 
 /** 
  * @param {string} spreadsheetId
