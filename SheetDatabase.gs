@@ -101,14 +101,19 @@ class SheetView {
 
     /**
      * 
-     * @param {Object[]} rowValues 
+     * @param {Object[]} rowValues
+     * @param {number=} rowNumber if set, will add `_rowNumber` property to the return object
      * @returns {?Object}
      */
-    _rowValuesToObject(rowValues) {
+    _rowValuesToObject(rowValues, rowNumber = null) {
         if (!rowValues || !Array.isArray(rowValues)) return null;
 
         const obj = {}
         const props = this._properties;
+
+        if (Number.isInteger(rowNumber) && rowNumber > 0) {
+            obj["_rowNumber"] = rowNumber;
+        }
 
         for (let i = 0; i < props.length; i++) {
             const propName = props[i];
@@ -149,12 +154,12 @@ class SheetView {
     }
 
     /**
-     * 
+     * The function reads a row from the sheet and converts it to an object.\n
      * @param {number} row Row number
      * @returns {?Object}
      */
     _rowToObject(row) {
-        if (!row || row < 1) return null;
+        if (!Number.isInteger(row) || row < 1) return null;
 
         const range = this._getRowRange(row);
         if (!range) return null;
@@ -162,7 +167,7 @@ class SheetView {
         const values = range.getValues();
         if (values.length == 0) return null;
 
-        return this._rowValuesToObject(values[0]);
+        return this._rowValuesToObject(values[0], row);
     }
 
     /**
@@ -202,7 +207,7 @@ class SheetView {
         const values = range.getValues();
         for (let i = 0; i < values.length; i++) {
             const rowValues = values[i];
-            const object = this._rowValuesToObject(rowValues);
+            const object = this._rowValuesToObject(rowValues, i);
             if (object) {
                 entries.push(object)
             }
@@ -217,7 +222,7 @@ class SheetView {
         if (!this._sheet) return null;
 
         let row = this._sheet.getLastRow()
-        if (!row || row < 2) return null;
+        if (!row || row <= 1) return null;
 
         return this._rowToObject(row)
     }
@@ -229,7 +234,7 @@ class SheetView {
      */
     getEntry(primaryKeysObject) {
         const row = this.findRowByPrimaryKeys(primaryKeysObject);
-        if (!row || row < 2) return null;
+        if (!row || row <= 1) return null;
 
         return this._rowToObject(row)
     }
