@@ -94,7 +94,7 @@ class SheetView {
      * @returns {?Range}
      */
     _getRowRange(row) {
-        if (!this._sheet || typeof (row) !== "number" || row < 2) return null;
+        if (!this._sheet || !Number.isInteger(row) || row <= 1) return null;
 
         return this._sheet.getRange(row, 1, 1, this._sheet.getLastColumn());
     }
@@ -159,8 +159,6 @@ class SheetView {
      * @returns {?Object}
      */
     _rowToObject(row) {
-        if (!Number.isInteger(row) || row < 1) return null;
-
         const range = this._getRowRange(row);
         if (!range) return null;
 
