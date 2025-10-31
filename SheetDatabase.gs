@@ -112,7 +112,7 @@ class SheetView {
         const props = this._properties;
 
         if (Number.isInteger(rowNumber) && rowNumber > 0) {
-            obj["_rowNumber"] = rowNumber;
+            obj._rowNumber = rowNumber;
         }
 
         for (let i = 0; i < props.length; i++) {
@@ -155,26 +155,31 @@ class SheetView {
 
     /**
      * The function reads a row from the sheet and converts it to an object.\n
-     * @param {number} row Row number
+     * @param {number} rowNumber Row number
      * @returns {?Object}
      */
-    _rowToObject(row) {
-        const range = this._getRowRange(row);
+    _rowToObject(rowNumber) {
+        const range = this._getRowRange(rowNumber);
         if (!range) return null;
 
         const values = range.getValues();
         if (values.length == 0) return null;
 
-        return this._rowValuesToObject(values[0], row);
+        return this._rowValuesToObject(values[0], rowNumber);
     }
 
     /**
-     * 
+     * Finds row number by primary key properties in the given object.\n
+     * If the object has `_rowNumber` property, it will be used directly.
      * @param {Object} object 
      * @returns {?number}
      */
     findRowByPrimaryKeys(object) {
         if (!object) return null;
+
+        if (Number.isInteger(object._rowNumber)) {
+            return object._rowNumber;
+        }
 
         const dataRange = this._getDataRange();
         if (!dataRange) return null;
@@ -331,7 +336,7 @@ class SheetDatabase extends SheetView {
      */
     addEntry(object) {
         const foundRow = this.findRowByPrimaryKeys(object);
-        if (typeof (foundRow) === "number" && foundRow > 1) return -1;
+        if (Number.isInteger(foundRow) && foundRow > 1) return -1;
 
         this._autoSetCreatedAt(object);
         this._autoSetModifiedAt(object);
@@ -346,13 +351,13 @@ class SheetDatabase extends SheetView {
     }
 
     /**
-     * 
+     * Update existing entry
      * @param {Object} object 
      * @returns {number} Row number of the updated row or -1 if the update failed
      */
     updateEntry(object) {
         const foundRow = this.findRowByPrimaryKeys(object);
-        if (typeof (foundRow) !== "number" || foundRow < 2) return -1;
+        if (!Number.isInteger(foundRow) || foundRow <= 1) return -1;
 
         const range = this._getRowRange(foundRow);
         if (!range) return -1;
@@ -374,23 +379,13 @@ class SheetDatabase extends SheetView {
     addOrUpdateEntry(object) {
         const foundRow = this.findRowByPrimaryKeys(object);
 
-        if (foundRow && foundRow > 0) {
-            this._autoSetModifiedAt(object);
-        } else {
-            this._autoSetCreatedAt(object);
+        let rowObject = this._rowToObject(foundRow);
+        if (rowObject) {
+            rowObject = Object.assign(rowObject, object);
+            return this.updateEntry(rowObject);
         }
 
-        const rowValues = this._objectToRowValues(object);
-        if (!Array.isArray(rowValues)) return -1;
-
-        const range = this._getRowRange(foundRow);
-        if (range) {
-            range.setValues([rowValues]);
-            return range.getRowIndex();
-        } else if (this._sheet.appendRow(rowValues)) {
-            return this._sheet.getLastRow();
-        }
-        return -1;
+        return this.addEntry(object);
     }
 
     /**
