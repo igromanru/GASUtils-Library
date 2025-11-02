@@ -51,6 +51,11 @@ class SheetView {
          */
         this._properties = properties;
         /**
+         * @type {number}
+         * @private
+         */
+        this._propertiesCount = properties.length;
+        /**
          * @type {Object<string, int>}
          * @private
          */
@@ -84,8 +89,7 @@ class SheetView {
         const rowCount = this._sheet.getLastRow() - 1;
         if (rowCount <= 0) return null;
 
-        const lastColumn = this._sheet.getLastColumn();
-        return this._sheet.getRange(2, 1, rowCount, lastColumn);
+        return this._sheet.getRange(2, 1, rowCount, this._propertiesCount);
     }
 
     /**
@@ -96,7 +100,7 @@ class SheetView {
     _getRowRange(row) {
         if (!this._sheet || !Number.isInteger(row) || row <= 1) return null;
 
-        return this._sheet.getRange(row, 1, 1, this._sheet.getLastColumn());
+        return this._sheet.getRange(row, 1, 1, this._propertiesCount);
     }
 
     /**
