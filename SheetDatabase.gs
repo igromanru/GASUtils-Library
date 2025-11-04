@@ -128,10 +128,10 @@ class SheetView {
                 continue;
             }
 
-            // if (isDate(cellValue)) {
-            //     obj[propName] = cell;
-            //     continue;
-            // }
+            if (isDate(cellValue)) {
+                obj[propName] = spreadsheetDateToDate(cellValue);
+                continue;
+            }
 
             const numberOrString = toNumberOrString(cellValue);
             if (numberOrString) {
@@ -214,7 +214,7 @@ class SheetView {
         const values = range.getValues();
         for (let i = 0; i < values.length; i++) {
             const rowValues = values[i];
-            const object = this._rowValuesToObject(rowValues, i);
+            const object = this._rowValuesToObject(rowValues, i + 2);
             if (object) {
                 entries.push(object)
             }
