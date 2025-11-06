@@ -44,6 +44,18 @@ class SheetLogger {
          * @private
          */
         this._sheet = sheet;
+        /**
+         * @type {string[]}
+         * @private
+         */
+        this._header = ["Timestamp", "Level", "Message"];
+        /**
+         * Maximum number of rows before rotating from beginning.
+         * Default: 50000
+         * @type {number}
+         * @private
+         */
+        this._maxRows = 50000;
     }
 
     /**
@@ -56,6 +68,60 @@ class SheetLogger {
 
         level_ = level;
         return this;
+    }
+
+    setMaxRows(maxRows) {
+        if (!maxRows || typeof maxRows !== 'number' || maxRows <= 1) {
+            throw new Error("Logger: maxRows parameter must be bigger than 1");
+        }
+
+        this._maxRows = maxRows;
+        return this;
+    }
+
+    debug(message, ...params) {
+        this.log_(LogLevel.Debug, message, ...params);
+    }
+
+    log(message, ...params) {
+        this.info(message, ...params);
+    }
+
+    info(message, ...params) {
+        this.log_(LogLevel.Info, message, ...params);
+    }
+
+    warn(message, ...params) {
+        this.log_(LogLevel.Warn, message, ...params);
+    }
+
+    error(message, ...params) {
+        this.log_(LogLevel.Error, message, ...params);
+    }
+
+    critical(message, ...params) {
+        this.log_(LogLevel.Critical, message, ...params);
+    }
+
+    /**
+     * Appends a log entry to the sheet.\n
+     * Creates header row if the sheet is empty.
+     * @param {LogLevel} level 
+     * @param {string} message 
+     * @param {...*} params 
+     * @returns 
+     */
+    log_(level, message, ...params) {
+        if (level < level_) {
+            return;
+        }
+        const lastRow = this._sheet.getLastRow();
+        if (lastRow == 0) {
+            this._sheet.appendRow(this._header);
+        }
+
+        const rowValues = [dateToSpreadsheetDate(new Date()), Object.keys(LogLevel).find(key => LogLevel[key] === level), formatString(message, ...params)];
+        this._sheet.appendRow(rowValues);
     }
 }
 
@@ -86,7 +152,7 @@ function newSheetLogger(sheetName, spreadsheetId = null) {
         throw new Error("Logger: Couldn't find active Spreadsheet");
     }
 
-    const sheet = Spreadsheet_.getSheetByName(sheetName);
+    const sheet = spreadsheet.getSheetByName(sheetName);
     if (!sheet) {
         throw new Error(`Logger: Couldn't find Sheet with name: ${sheetName}`);
     }
