@@ -30,7 +30,7 @@ class SheetLogger {
         if (typeof (spreadsheet) !== "object") {
             throw new Error("spreadsheet parameter has to be a Spreadsheet object!");
         }
-        if (typeof (sheetName) != "string") {
+        if (typeof (sheet) !== "object") {
             throw new Error("sheet parameter has to be a Sheet object!");
         }
 
@@ -56,17 +56,32 @@ class SheetLogger {
          * @private
          */
         this._maxRows = 50000;
+
+        /**
+         * Current log level.  
+         * Default: LogLevel.Info
+         * @type {LogLevel}
+         * @private
+         */
+        this._level = LogLevel.Info;
+    }
+
+    /**
+     * @returns {LogLevel}
+     */
+    getLogLevels() {
+        return LogLevel;
     }
 
     /**
      * @param {LogLevel} level 
      */
     setLevel(level) {
-        if (!level || typeof level !== 'number' || level < LogLevel.Trace || level > LogLevel.None) {
-            throw new Error("Logger: level parameter must be a valid LogLevel");
+        if (typeof level !== 'number' || level < LogLevel.Trace || level > LogLevel.None) {
+            throw new Error(`Logger: level parameter must be a valid LogLevel. Got: ${JSON.stringify(level)}`);
         }
 
-        level_ = level;
+        this._level = level;
         return this;
     }
 
@@ -77,6 +92,16 @@ class SheetLogger {
 
         this._maxRows = maxRows;
         return this;
+    }
+
+    /**
+     * Logs a trace message.
+     * @param {string} message 
+     * @param {...*} params 
+     * @returns {SheetLogger} this
+     */
+    trace(message, ...params) {
+        return this.log_(LogLevel.Trace, message, ...params);
     }
 
     /**
@@ -149,7 +174,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     log_(level, message, ...params) {
-        if (level < level_) {
+        if (level < this._level) {
             return;
         }
         const lastRow = this._sheet.getLastRow();
@@ -160,7 +185,12 @@ class SheetLogger {
             this._sheet.deleteRows(2, lastRow - 1);
         }
 
-        const rowValues = [dateToSpreadsheetDate(new Date()), Object.keys(LogLevel).find(key => LogLevel[key] === level), formatString(message, ...params)];
+        const now = new Date();
+        const levelAsString = Object.keys(LogLevel).find(key => LogLevel[key] === level);
+        const formattedMessage = formatString(message, ...params);
+        NativeLogger.log("%s | %s | %s", now.toISOString(), levelAsString, formattedMessage);
+
+        const rowValues = [dateToSpreadsheetDate(now), levelAsString, formattedMessage];
         this._sheet.appendRow(rowValues);
 
         return this;
@@ -177,7 +207,7 @@ function newSheetLogger(sheetName, spreadsheetId = null) {
         throw new Error("Logger: sheetName parameter must be specified");
     }
 
-    if (typeof spreadsheetId !== 'string' || (typeof spreadsheetId === 'string' && spreadsheetId.trim() === '')) {
+    if (spreadsheetId && (typeof spreadsheetId !== 'string' || spreadsheetId.trim() === '')) {
         throw new Error("Logger: spreadsheetId parameter must be a valid ID");
     }
 

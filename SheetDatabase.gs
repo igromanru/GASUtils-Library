@@ -17,16 +17,16 @@ class SheetView {
      * @param {(string[]|string)} primaryKeyProperties Columns that combined should be unique
      */
     constructor(spreadsheetId, sheetName, properties, primaryKeyProperties) {
-        if (typeof (spreadsheetId) != "string") {
+        if (typeof (spreadsheetId) !== "string") {
             throw new Error("spreadsheetId parameter has to be a string!");
         }
-        if (typeof (sheetName) != "string") {
+        if (typeof (sheetName) !== "string") {
             throw new Error("sheetName parameter has to be a string!");
         }
         if (!Array.isArray(properties)) {
             throw new Error("columns parameter has to be a string array!");
         }
-        if (typeof (primaryKeyProperties) != "string" && !Array.isArray(primaryKeyProperties)) {
+        if (typeof (primaryKeyProperties) !== "string" && !Array.isArray(primaryKeyProperties)) {
             throw new Error("primaryKeyColumns parameter has to be a string or a string array!");
         }
         /**
