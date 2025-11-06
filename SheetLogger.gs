@@ -45,6 +45,18 @@ class SheetLogger {
          */
         this._sheet = sheet;
     }
+
+    /**
+     * @param {LogLevel} level 
+     */
+    setLevel(level) {
+        if (!level || typeof level !== 'number' || level < LogLevel.Trace || level > LogLevel.None) {
+            throw new Error("Logger: level parameter must be a valid LogLevel");
+        }
+
+        level_ = level;
+        return this;
+    }
 }
 
 /**
