@@ -50,7 +50,7 @@ class SheetLogger {
          */
         this._header = ["Timestamp", "Level", "Message"];
         /**
-         * Maximum number of rows before rotating from beginning.
+         * Maximum number of rows before rotating from beginning.  
          * Default: 50000
          * @type {number}
          * @private
@@ -79,37 +79,74 @@ class SheetLogger {
         return this;
     }
 
+    /**
+     * Logs a debug message.
+     * @param {string} message 
+     * @param {...*} params 
+     * @returns {SheetLogger} this
+     */
     debug(message, ...params) {
-        this.log_(LogLevel.Debug, message, ...params);
-    }
-
-    log(message, ...params) {
-        this.info(message, ...params);
-    }
-
-    info(message, ...params) {
-        this.log_(LogLevel.Info, message, ...params);
-    }
-
-    warn(message, ...params) {
-        this.log_(LogLevel.Warn, message, ...params);
-    }
-
-    error(message, ...params) {
-        this.log_(LogLevel.Error, message, ...params);
-    }
-
-    critical(message, ...params) {
-        this.log_(LogLevel.Critical, message, ...params);
+        return this.log_(LogLevel.Debug, message, ...params);
     }
 
     /**
-     * Appends a log entry to the sheet.\n
-     * Creates header row if the sheet is empty.
-     * @param {LogLevel} level 
+     * Logs a info message.
      * @param {string} message 
      * @param {...*} params 
-     * @returns 
+     * @returns {SheetLogger} this
+     */
+    log(message, ...params) {
+        return this.info(message, ...params);
+    }
+
+    /**
+     * Logs a info message.
+     * @param {string} message 
+     * @param {...*} params 
+     * @returns {SheetLogger} this
+     */
+    info(message, ...params) {
+        return this.log_(LogLevel.Info, message, ...params);
+    }
+
+    /**
+     * Logs a warning message.
+     * @param {string} message 
+     * @param {...*} params 
+     * @returns {SheetLogger} this
+     */
+    warn(message, ...params) {
+        return this.log_(LogLevel.Warn, message, ...params);
+    }
+
+    /**
+     * Logs a error message.
+     * @param {string} message 
+     * @param {...*} params 
+     * @returns {SheetLogger} this
+     */
+    error(message, ...params) {
+        return this.log_(LogLevel.Error, message, ...params);
+    }
+
+    /**
+     * Logs a critical message.
+     * @param {string} message 
+     * @param {...*} params 
+     * @returns {SheetLogger} this
+     */
+    critical(message, ...params) {
+        return this.log_(LogLevel.Critical, message, ...params);
+    }
+
+    /**
+     * Appends a log entry to the sheet.  
+     * Creates header row if the sheet is empty.  
+     * Rotates the log if max rows exceeded.
+     * @param {LogLevel} level 
+     * @param {string} message 
+     * @param {...*} params
+     * @returns {SheetLogger} this
      */
     log_(level, message, ...params) {
         if (level < level_) {
@@ -119,9 +156,14 @@ class SheetLogger {
         if (lastRow == 0) {
             this._sheet.appendRow(this._header);
         }
+        if (lastRow >= this._maxRows) {
+            this._sheet.deleteRows(2, lastRow - 1);
+        }
 
         const rowValues = [dateToSpreadsheetDate(new Date()), Object.keys(LogLevel).find(key => LogLevel[key] === level), formatString(message, ...params)];
         this._sheet.appendRow(rowValues);
+
+        return this;
     }
 }
 
