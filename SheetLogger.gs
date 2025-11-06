@@ -95,6 +95,44 @@ class SheetLogger {
     }
 
     /**
+     * Enables conditional formatting for log levels.
+     * @returns {SheetLogger} this
+     */
+    enableLogLevelColors() {
+        const range = this._sheet.getRange('A2:M');
+        const rules = [];
+
+        rules.push(SpreadsheetApp.newConditionalFormatRule()
+            .whenFormulaSatisfied('=$B2="Debug"')
+            .setBackground('#999999')
+            .setRanges([range])
+            .build()
+        );
+        rules.push(SpreadsheetApp.newConditionalFormatRule()
+            .whenFormulaSatisfied('=$B2="Warn"')
+            .setBackground('#ffe599')
+            .setRanges([range])
+            .build()
+        );
+        rules.push(SpreadsheetApp.newConditionalFormatRule()
+            .whenFormulaSatisfied('=$B2="Error"')
+            .setBackground('#f4cccc')
+            .setRanges([range])
+            .build()
+        );
+        rules.push(SpreadsheetApp.newConditionalFormatRule()
+            .whenFormulaSatisfied('=$B2="Critical"')
+            .setBackground('#ff0000')
+            .setRanges([range])
+            .build()
+        );
+
+        this._sheet.setConditionalFormatRules(rules);
+
+        return this;
+    }
+
+    /**
      * Logs a trace message.
      * @param {string} message 
      * @param {...*} params 
