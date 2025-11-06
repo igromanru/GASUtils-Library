@@ -101,7 +101,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     trace(message, ...params) {
-        return this.log_(LogLevel.Trace, message, ...params);
+        return this._log(LogLevel.Trace, message, ...params);
     }
 
     /**
@@ -111,7 +111,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     debug(message, ...params) {
-        return this.log_(LogLevel.Debug, message, ...params);
+        return this._log(LogLevel.Debug, message, ...params);
     }
 
     /**
@@ -131,7 +131,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     info(message, ...params) {
-        return this.log_(LogLevel.Info, message, ...params);
+        return this._log(LogLevel.Info, message, ...params);
     }
 
     /**
@@ -141,7 +141,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     warn(message, ...params) {
-        return this.log_(LogLevel.Warn, message, ...params);
+        return this._log(LogLevel.Warn, message, ...params);
     }
 
     /**
@@ -151,7 +151,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     error(message, ...params) {
-        return this.log_(LogLevel.Error, message, ...params);
+        return this._log(LogLevel.Error, message, ...params);
     }
 
     /**
@@ -161,7 +161,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     critical(message, ...params) {
-        return this.log_(LogLevel.Critical, message, ...params);
+        return this._log(LogLevel.Critical, message, ...params);
     }
 
     /**
@@ -173,13 +173,13 @@ class SheetLogger {
      * @param {...*} params
      * @returns {SheetLogger} this
      */
-    log_(level, message, ...params) {
+    _log(level, message, ...params) {
         if (level < this._level) {
             return;
         }
         const lastRow = this._sheet.getLastRow();
         if (lastRow == 0) {
-            this._sheet.appendRow(this._header);
+            this._setHeaderAndFormat();
         }
         if (lastRow >= this._maxRows) {
             this._sheet.deleteRows(2, lastRow - 1);
@@ -192,6 +192,23 @@ class SheetLogger {
 
         const rowValues = [dateToSpreadsheetDate(now), levelAsString, formattedMessage];
         this._sheet.appendRow(rowValues);
+
+        return this;
+    }
+
+    /**
+     * Sets header row and applies formatting.
+     * @returns {SheetLogger} this
+     */
+    _setHeaderAndFormat() {
+        // Format header
+        const headerRange = this._sheet.getRange(1, 1, 1, this._header.length);
+        headerRange.setValues([this._header]);
+        headerRange.setFontWeight('bold');
+        // Format timestamp column
+        this._sheet.getRange('A2:A').setNumberFormat("yyyy-mm-dd hh:mm:ss");
+        // Center align first two columns
+        this._sheet.getRange('A:B').setHorizontalAlignment('center');
 
         return this;
     }
