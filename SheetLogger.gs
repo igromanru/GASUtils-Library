@@ -226,7 +226,7 @@ class SheetLogger {
         const now = new Date();
         const levelAsString = Object.keys(LogLevel).find(key => LogLevel[key] === level);
         const formattedMessage = formatString(message, ...params);
-        NativeLogger.log("%s | %s | %s", now.toISOString(), levelAsString, formattedMessage);
+        NativeLogger.log("%s | %s", levelAsString, formattedMessage);
 
         const rowValues = [dateToSpreadsheetDate(now), levelAsString, formattedMessage];
         this._sheet.appendRow(rowValues);
