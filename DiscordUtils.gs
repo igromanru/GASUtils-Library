@@ -23,20 +23,25 @@ function dateToDiscordTimestamp(dateTime, style = 'f') {
  * @param {string} [messageContent='']
  * @param {string} [sourceUrl='']
  */
-function sendDiscordWebHook(webHookUrl, embedTitle, embedDescription, messageContent = '', sourceUrl = '') {
-    const embedJson = {
-        title: embedTitle,
-        type: 'rich',
-        description: embedDescription,
-        url: sourceUrl
-    };
+function sendDiscordWebHook(webHookUrl, embedTitle = '', embedDescription = '', messageContent = '', sourceUrl = '') {
+    let embedJson = undefined;
+    if (embedTitle || embedDescription) {
+        embedJson = {
+            title: embedTitle,
+            type: 'rich',
+            description: embedDescription,
+            url: sourceUrl
+        };
+    }
 
     const jsobObject = {
-        embeds: [
-            embedJson
-        ],
         content: messageContent
     };
+
+    if (embedJson) {
+        jsobObject.embeds = [embedJson];
+    }
+
     const payload = JSON.stringify(jsobObject);
     console.log('sendDiscordWebHook Payload: ' + payload);
 
