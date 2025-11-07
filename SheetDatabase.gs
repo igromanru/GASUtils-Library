@@ -376,20 +376,34 @@ class SheetDatabase extends SheetView {
     }
 
     /**
+     * @typedef {Object} AddOrUpdateResult
+     * @property {boolean} added - True if a new row was added, false if an existing row was updated
+     * @property {number} rowNumber - Row number of added or updated row or -1 if the operation failed
+     */
+
+    /**
      * 
      * @param {Object} object 
-     * @returns {number} Row number of added or updated row or -1 if the operation failed
+     * @returns {AddOrUpdateResult}
      */
     addOrUpdateEntry(object) {
+        const result = {
+            added: false,
+            rowNumber: -1
+        };
+
         const foundRow = this.findRowByPrimaryKeys(object);
 
         let rowObject = this._rowToObject(foundRow);
         if (rowObject) {
             rowObject = Object.assign(rowObject, object);
-            return this.updateEntry(rowObject);
+            result.rowNumber = this.updateEntry(rowObject);
+            return result;
         }
 
-        return this.addEntry(object);
+        result.rowNumber = this.addEntry(object);
+        result.added = result.rowNumber > -1;
+        return result;
     }
 
     /**
