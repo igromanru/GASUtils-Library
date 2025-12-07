@@ -99,7 +99,7 @@ class SheetLogger {
      * @returns {SheetLogger} this
      */
     enableLogLevelColors() {
-        const range = this._sheet.getRange('A2:M');
+        const range = this._sheet.getRange('A2:Z');
         const rules = [];
 
         rules.push(SpreadsheetApp.newConditionalFormatRule()
