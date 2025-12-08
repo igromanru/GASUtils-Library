@@ -296,7 +296,7 @@ class SheetView {
     getAllEntry() {
         const values = this._getDataValues()
         if (!values) return [];
-        
+
         let entries = new Array();
         for (let i = 0; i < values.length; i++) {
             const rowValues = values[i];
