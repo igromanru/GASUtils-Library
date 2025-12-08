@@ -38,6 +38,11 @@ class SheetView {
             throw new Error(`Couldn't find Spreadsheet with id: ${spreadsheetId}`);
         }
         /**
+         * @type {string}
+         * @private
+         */
+        this._spreadsheetId = spreadsheetId;
+        /**
          * @type {Sheet}
          * @private
          */
@@ -45,6 +50,11 @@ class SheetView {
         if (!this._sheet) {
             throw new Error(`Couldn't find Sheet with name: ${sheetName}`);
         }
+        /**
+         * @type {string}
+         * @private
+         */
+        this._sheetName = sheetName;
         /**
          * @type {string[]}
          * @private
@@ -68,6 +78,21 @@ class SheetView {
                 }
             }
         });
+        /**
+         * @type {CacheService.Cache|undefined}
+         * @private
+         */
+        this._scriptCache = undefined;
+        /**
+         * @type {string|undefined}
+         * @private
+         */
+        this._cacheName = undefined;
+        /**
+         * @type {boolean}
+         * @private
+         */
+        this._useSheetsApi = false;
     }
 
     /**
@@ -81,7 +106,7 @@ class SheetView {
 
     /**
      * Returns data range (without header row)
-     * @returns {?Range}
+     * @returns {Range|null}
      */
     _getDataRange() {
         if (!this._sheet) return null;
@@ -99,6 +124,15 @@ class SheetView {
     _getDataValues() {
         const dataRange = this._getDataRange();
         if (!dataRange) return null;
+
+        if (this._useSheetsApi) {
+            try {
+                const range = `${this._sheetName}!${dataRange.getA1Notation()}`;
+                return Sheets.Spreadsheets.Values.get(this._spreadsheetId, range).values;
+            } catch (err) {
+                // return null;
+            }
+        }
 
         return dataRange.getValues();
     }
@@ -253,6 +287,23 @@ class SheetView {
         if (!row || row <= 1) return null;
 
         return this._rowToObject(row)
+    }
+
+    /**
+     * Assigns script cache of the script that uses this library
+     * @param {CacheService.Cache} cache
+     * @param {string} cacheName
+     */
+    setScriptCache(cache, cacheName) {
+        this._scriptCache = cache;
+        this._cacheName = cacheName;
+    }
+
+    /**
+     * Use Sheets API for read/write operations
+     */
+    useSheetsApi() {
+        this._useSheetsApi = true;
     }
 }
 
