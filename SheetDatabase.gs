@@ -78,10 +78,10 @@ class SheetView {
          */
         this._scriptCache = undefined;
         /**
-         * @type {string|undefined}
+         * @type {string}
          * @private
          */
-        this._cacheName = undefined;
+        this._cacheName = sheetName + "Cache";
         /**
          * @type {boolean}
          * @private
@@ -125,13 +125,36 @@ class SheetView {
     }
 
     /**
+     * Returns number of data rows (without header row)
+     * @returns {number}
+     */
+    _getRowCount() {
+        if (!this._getSheet()) return 0;
+
+        const cacheKey = this._cacheName + "_RowCount";
+        if (this._scriptCache) {
+            const cachedValue = this._scriptCache.get(cacheKey);
+            if (cachedValue) {
+                const rowCount = parseInt(cachedValue, 10);
+                if (!isNaN(rowCount)) {
+                    return rowCount;
+                }
+            }
+        }
+
+        const value = this._sheet.getLastRow() - 1;
+        if (value > 0 && this._scriptCache) {
+            this._scriptCache.put(cacheKey, value.toString(), 21600); // Cache for 6h (max value)
+        }
+        return value;
+    }
+
+    /**
      * Returns data range (without header row)
      * @returns {Range|null}
      */
     _getDataRange() {
-        if (!this._getSheet()) return null;
-
-        const rowCount = this._sheet.getLastRow() - 1;
+        const rowCount = this._getRowCount();
         if (rowCount <= 0) return null;
 
         return this._sheet.getRange(2, 1, rowCount, this._propertiesCount);
@@ -312,11 +335,11 @@ class SheetView {
     /**
      * Assigns script cache of the script that uses this library
      * @param {CacheService.Cache} cache
-     * @param {string} cacheName
      */
-    setScriptCache(cache, cacheName) {
+    setScriptCache(cache) {
+        if (!cache) return;
+
         this._scriptCache = cache;
-        this._cacheName = cacheName;
     }
 
     /**
