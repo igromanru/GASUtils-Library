@@ -80,7 +80,7 @@ class SheetView {
     }
 
     /**
-     * 
+     * Returns data range (without header row)
      * @returns {?Range}
      */
     _getDataRange() {
@@ -90,6 +90,17 @@ class SheetView {
         if (rowCount <= 0) return null;
 
         return this._sheet.getRange(2, 1, rowCount, this._propertiesCount);
+    }
+
+    /**
+     * Returns data values (without header row)
+     * @returns {Array|null}
+     */
+    _getDataValues() {
+        const dataRange = this._getDataRange();
+        if (!dataRange) return null;
+
+        return dataRange.getValues();
     }
 
     /**
@@ -185,10 +196,9 @@ class SheetView {
             return object._rowNumber;
         }
 
-        const dataRange = this._getDataRange();
-        if (!dataRange) return null;
+        const values = this._getDataValues();
+        if (!values) return null;
 
-        const values = dataRange.getValues();
         const index = values.findIndex(row => {
             for (const [propertyName, columnIndex] of Object.entries(this._primaryKeyProperties)) {
                 if (row[columnIndex] !== object[propertyName]) {
@@ -207,11 +217,10 @@ class SheetView {
      * @returns {Object[]}
      */
     getAllEntry() {
+        const values = this._getDataValues()
+        if (!values) return [];
+        
         let entries = new Array();
-        const range = this._getDataRange()
-        if (!range) return [];
-
-        const values = range.getValues();
         for (let i = 0; i < values.length; i++) {
             const rowValues = values[i];
             const object = this._rowValuesToObject(rowValues, i + 2);
