@@ -30,31 +30,25 @@ class SheetView {
             throw new Error("primaryKeyColumns parameter has to be a string or a string array!");
         }
         /**
-         * @type {Spreadsheet}
-         * @private
-         */
-        this._spreadsheet = SpreadsheetApp.openById(spreadsheetId);
-        if (!this._spreadsheet) {
-            throw new Error(`Couldn't find Spreadsheet with id: ${spreadsheetId}`);
-        }
-        /**
          * @type {string}
          * @private
          */
         this._spreadsheetId = spreadsheetId;
         /**
-         * @type {Sheet}
-         * @private
-         */
-        this._sheet = this._spreadsheet.getSheetByName(sheetName);
-        if (!this._sheet) {
-            throw new Error(`Couldn't find Sheet with name: ${sheetName}`);
-        }
-        /**
          * @type {string}
          * @private
          */
         this._sheetName = sheetName;
+        /**
+         * @type {Spreadsheet|null}
+         * @private
+         */
+        this._spreadsheet = null;
+        /**
+         * @type {Sheet|null}
+         * @private
+         */
+        this._sheet = null;
         /**
          * @type {string[]}
          * @private
@@ -96,6 +90,32 @@ class SheetView {
     }
 
     /**
+     * Lazy load Spreadsheet object, if not already loaded
+     * @returns {Spreadsheet|null}
+     */
+    _getSpreadsheet() {
+        if (!this._spreadsheet) {
+            this._spreadsheet = SpreadsheetApp.openById(this._spreadsheetId);
+        }
+
+        return this._spreadsheet;
+    }
+
+    /**
+     * Lazy load Sheet object, if not already loaded
+     * @returns {Sheet|null}
+     */
+    _getSheet() {
+        if (!this._sheet) {
+            const spreadsheet = this._getSpreadsheet();
+            if (!spreadsheet) return null;
+            this._sheet = spreadsheet.getSheetByName(this._sheetName);
+        }
+
+        return this._sheet;
+    }
+
+    /**
      * Converts `Values` index to row number, which is 0 at row number 2, when using `getDataRange`.
      * @param {number} index 
      * @returns {number}
@@ -109,7 +129,7 @@ class SheetView {
      * @returns {Range|null}
      */
     _getDataRange() {
-        if (!this._sheet) return null;
+        if (!this._getSheet()) return null;
 
         const rowCount = this._sheet.getLastRow() - 1;
         if (rowCount <= 0) return null;
@@ -143,7 +163,7 @@ class SheetView {
      * @returns {?Range}
      */
     _getRowRange(row) {
-        if (!this._sheet || !Number.isInteger(row) || row <= 1) return null;
+        if (!this._getSheet() || !Number.isInteger(row) || row <= 1) return null;
 
         return this._sheet.getRange(row, 1, 1, this._propertiesCount);
     }
@@ -269,7 +289,7 @@ class SheetView {
      * @returns {?Object}
      */
     getLastEntry() {
-        if (!this._sheet) return null;
+        if (!this._getSheet()) return null;
 
         let row = this._sheet.getLastRow()
         if (!row || row <= 1) return null;
