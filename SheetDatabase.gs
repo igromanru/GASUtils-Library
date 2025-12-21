@@ -165,17 +165,19 @@ class SheetView {
      * @returns {Array|null}
      */
     _getDataValues() {
-        const dataRange = this._getDataRange();
-        if (!dataRange) return null;
-
         if (this._useSheetsApi) {
             try {
-                const range = `${this._sheetName}!${dataRange.getA1Notation()}`;
-                return Sheets.Spreadsheets.Values.get(this._spreadsheetId, range).values;
+                const values = Sheets.Spreadsheets.Values.get(this._spreadsheetId, this._sheetName).values;
+                return values.slice(1); // Skip header row
+                // const range = `${this._sheetName}!${dataRange.getA1Notation()}`;
+                // return Sheets.Spreadsheets.Values.get(this._spreadsheetId, range).values;
             } catch (err) {
                 // return null;
             }
         }
+
+        const dataRange = this._getDataRange();
+        if (!dataRange) return null;
 
         return dataRange.getValues();
     }
